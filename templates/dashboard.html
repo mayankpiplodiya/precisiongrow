@@ -1,0 +1,76 @@
+{% extends "home.html" %}
+{% block title %}Dashboard · PrecisionGrow{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+  <h1 class="fw-bold">Welcome, admin 🌱</h1>
+  <p class="text-muted fs-5">Interactive dashboard — Crop prediction, soil monitoring, and intelligent reports.</p>
+</div>
+
+<div class="row justify-content-center g-4">
+  <!-- Crop Prediction Card -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 h-100 text-center p-4">
+      <div class="mb-3 text-success fs-2">
+        <i class="fa-solid fa-seedling"></i> <!-- ✅ Added icon -->
+      </div>
+      <h5 class="fw-bold">Crop Prediction</h5>
+      <p class="text-muted small">
+        Recommend crops from sensor inputs. Upload soil readings or enter values to predict the best crop for your field.
+      </p>
+      <a href="{{ url_for('crop_prediction') }}" class="btn btn-outline-success">Open Prediction →</a>
+    </div>
+  </div>
+
+  <!-- Soil Health Card -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 h-100 text-center p-4">
+      <div class="mb-3 text-warning fs-2">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <h5 class="fw-bold">Soil Health</h5>
+      <p class="text-muted small">
+        View live sensor metrics and download soil health reports.
+      </p>
+      <a href="{{ url_for('soil_health') }}" class="btn btn-outline-warning">Open Soil Health →</a>
+    </div>
+  </div>
+
+  <!-- Reports & Alerts Card -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 h-100 text-center p-4">
+      <div class="mb-3 text-primary fs-2">
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <h5 class="fw-bold">Reports & Alerts</h5>
+      <p class="text-muted small">
+        Open the AI Assistant to get data-driven advice and review alerts generated from sensors.
+      </p>
+      <a href="{{ url_for('reports') }}" class="btn btn-outline-primary">Open Reports →</a>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions Section -->
+<div class="card mt-5 shadow-sm border-0 p-4">
+  <h5 class="fw-bold text-center mb-3">Quick Actions</h5>
+  <p class="text-center text-muted small">Useful shortcuts for demo and testing</p>
+  <div class="d-flex justify-content-center gap-3">
+    <a href="{{ url_for('crop_prediction') }}" class="btn btn-success">
+      ▶️ Run Prediction
+    </a>
+    <a href="{{ url_for('soil_health') }}" class="btn btn-secondary">
+      📊 View Sensors
+    </a>
+    <a href="{{ url_for('reports') }}" class="btn btn-info text-white">
+      💬 AI Assistance
+    </a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Additional dashboard-specific scripts can go here
+</script>
+{{ super() }}
+{% endblock %}
