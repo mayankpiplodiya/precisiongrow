@@ -1,19 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Reports & Alerts</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body style="background:#BCBBB8;">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/home">Precision Grow</a>
-    </div>
-</nav>
-<div class="container mt-5 text-center">
-    <h2 class="text-info">Reports & Notifications</h2>
-    <p class="lead">This section will show alerts and reports in future updates.</p>
+{% extends "home.html" %}
+{% block title %}Reports & Alerts · PrecisionGrow{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h2 class="text-success mb-2">Reports & Alerts</h2>
+  <p class="lead-muted mb-3">Use the AI Assistant for soil & crop guidance.</p>
+
+  <div class="d-flex justify-content-center">
+    <button id="chatbotToggle" class="btn btn-success btn-lg center-btn"><i class="fa-solid fa-robot me-2"></i> AI Assistance</button>
+  </div>
+
+  <div class="d-flex justify-content-center gap-2 mt-3">
+    <button class="btn btn-outline-primary quick-q">Ideal pH for rice?</button>
+    <button class="btn btn-outline-primary quick-q">Low nitrogen in maize</button>
+    <button class="btn btn-outline-primary quick-q">High humidity risk</button>
+  </div>
 </div>
-</body>
-</html>
+
+<div id="chatPanel" class="card project-card mt-4 mx-auto" style="max-width:720px; display:none;">
+  <div class="card-header bg-gradient text-white d-flex justify-content-between align-items-center">
+    <div><i class="fa-solid fa-comments me-2"></i>PrecisionBot 🌾</div>
+    <button id="closeChat" class="btn btn-sm btn-light">Close</button>
+  </div>
+
+  <div class="card-body d-flex flex-column" style="height:420px;">
+    <div id="chatMessages" class="flex-grow-1 mb-3" style="overflow-y:auto;">
+      <div class="bot-message p-2 mb-2">Hi! 👋 I’m PrecisionBot. Ask me about soil pH, humidity, temperature, NPK, or crop yield. Try the buttons above.</div>
+    </div>
+
+    <div class="input-group">
+      <input id="chatInput" type="text" class="form-control" placeholder="Type your question..." aria-label="Chat input">
+      <button id="sendBtn" class="btn btn-success"><i class="fa-solid fa-paper-plane"></i> Send</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const toggleBtn = document.getElementById('chatbotToggle');
+const chatPanel = document.getElementById('chatPanel');
+const closeBtn = document.getElementById('closeChat');
+const sendBtn = document.getElementById('sendBtn');
+const chatInput = document.getElementById('chatInput');
+const chatMessages = document.getElementById('chatMessages');
+const quickButtons = document.querySelectorAll('.quick-q');
+
+function appendMessage(text, sender){
+  const div = document.createElement('div');
+  div.className = sender === 'user' ? 'user-message p-2 mb-2' : 'bot-message p-2 mb-2';
+  div.textContent = text;
+  if (sender === 'user') { div.style.marginLeft='auto'; div.style.background='#dff4e0'; }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+toggleBtn.addEventListener('click', ()=>{
+  chatPanel.style.display = chatPanel.style.display === 'block' ? 'none' : 'block';
+  if (chatPanel.style.display === 'block') setTimeout(()=>chatInput.focus(),120);
+});
+
+closeBtn.addEventListener('click', ()=> chatPanel.style.display='none');
+
+async function sendMessage(msg){
+  if (!msg) return;
+  appendMessage(msg, 'user');
+  try {
+    const resp = await fetch('/chatbot', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await resp.json();
+    appendMessage(data.reply || data.response || 'No reply.', 'bot');
+  } catch(e){
+    appendMessage('⚠️ Could not reach server.', 'bot');
+  }
+}
+
+sendBtn.addEventListener('click', ()=>{ const t = chatInput.value.trim(); if(!t) return; chatInput.value=''; sendMessage(t); });
+chatInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); }});
+quickButtons.forEach(btn => btn.addEventListener('click', ()=>{ if(chatPanel.style.display!=='block') toggleBtn.click(); setTimeout(()=> sendMessage(btn.textContent.trim()), 200); }));
+</script>
+{% endblock %}
