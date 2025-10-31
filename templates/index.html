@@ -1,113 +1,207 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crop Prediction System </title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
-  </head>
-  <style>
-		h1 {
-			color: rgb(0, 0, 0);
-			text-align: center;
-		}
+{% extends "home.html" %}
+{% block title %}Crop Prediction · PrecisionGrow{% endblock %}
 
-		.warning {
-			color: red;
-			font-weight: bold;
-			text-align: center;
-		}
-		.card{
-		margin-left:410px;
-		margin-top: 20px;
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		color: rgb(241, 239, 240);
-		}
-		.container{
-		background:#fffbfe;
-		font-weight: bold;
-		padding-bottom:10px;
-		border-radius: 15px;
-		}
-	</style>
+{% block content %}
+<style>
+/* local tweaks for this page to ensure consistent spacing/alignment */
+.accent-row { margin-bottom: 18px; }
+.accent-card {
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:12px 18px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.95);
+  box-shadow: 0 8px 18px rgba(14,30,37,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  min-width: 220px;
+}
+.accent-icon{
+  width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;
+}
+.accent-body h6{ margin:0; font-weight:700; font-size:0.95rem; }
+.accent-body p{ margin:0; font-size:0.85rem; color: #6c757d; }
 
+/* color variants */
+.accent-green .accent-icon{ background: var(--mid-green, #28a745); }
+.accent-yellow .accent-icon{ background: #ffb703; }
+.accent-blue .accent-icon{ background: #0d6efd; }
 
+/* place the accent cards in a centered row with even spacing */
+.accent-wrapper { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
 
+/* tweak top hero area */
+.form-hero { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.form-hero .title-block { min-width: 240px; }
+.form-hero .actions { white-space:nowrap; }
 
-  <body style="background:#BCBBB8">
-  <!--=======================navbar=====================================================-->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Precision Grow</a>
+/* make fields vertically balanced */
+.form-control { min-height: 44px; }
+
+/* ensure right card content aligns nicely */
+.model-card .list-group-item { border: none; padding: 8px 0; }
+
+/* responsive improvements */
+@media (max-width: 991px) {
+  .form-hero { flex-direction:column; align-items:flex-start; }
+  .accent-wrapper { justify-content:stretch; }
+}
+</style>
+
+<div class="row g-4">
+  <!-- Accent cards row -->
+  <div class="col-12 accent-row">
+    <div class="accent-wrapper w-100">
+      <div class="accent-card accent-green">
+        <div class="accent-icon"><i class="fa-solid fa-seedling"></i></div>
+        <div class="accent-body">
+          <h6>Crop Recommendation</h6>
+          <p class="mb-0">Model suggests the best crop based on soil & climate inputs.</p>
+        </div>
+      </div>
+
+      <div class="accent-card accent-yellow">
+        <div class="accent-icon"><i class="fa-solid fa-wind"></i></div>
+        <div class="accent-body">
+          <h6>Auto Fill Live</h6>
+          <p class="mb-0">Auto-fill form from live sensors (if configured).</p>
+        </div>
+      </div>
+
+      <div class="accent-card accent-blue">
+        <div class="accent-icon"><i class="fa-solid fa-database"></i></div>
+        <div class="accent-body">
+          <h6>Data Tips</h6>
+          <p class="mb-0">Hover fields for guidance. Use realistic values for best results.</p>
+        </div>
+      </div>
+    </div>
   </div>
-</nav>
 
-<!--==========================================================================================-->
-  <div class="container my-3 mt-3">
-      <h1 class="text-success">Crop Prediction System<span class="text-success">🌱</span></h1>
+  <!-- Main content: form -->
+  <div class="col-lg-8">
+    <div class="card project-card p-4">
+      <div class="form-hero mb-3">
+        <div class="title-block">
+          <h3 class="h1-hero mb-0">Crop Prediction</h3>
+          <p class="lead-muted mb-0">Enter soil values or click <strong>Fill Live Data</strong>.</p>
+        </div>
+        <div class="actions">
+          <button id="fillBtn" class="btn btn-outline-success">Fill Live Data</button>
+        </div>
+      </div>
 
-<!--      adding form-->
-      <form action="/predict" method="POST">
-          <div class="row">
-              <div class="col-md-4">
-					<label for="Nitrogen">Nitrogen</label>
-					<input type="number" id="Nitrogen" name="Nitrogen" placeholder="Enter Nitrogen" class="form-control" required step="0">
-				</div>
-               <div class="col-md-4">
-					<label for="Phosporus">Phosphorus</label>
-					<input type="number" id="Phosporus" name="Phosporus" placeholder="Enter Phosphorus" class="form-control" required step="00">
-				</div>
-				<div class="col-md-4">
-					<label for="Potassium">Potassium</label>
-					<input type="number" id="Potassium" name="Potassium" placeholder="Enter Potassium" class="form-control" required step="0">
-				</div>
+      <form action="{{ url_for('predict') }}" method="POST" id="cropForm" class="mt-3">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="Nitrogen" class="form-label">Nitrogen (N)</label>
+            <input type="number" step="0.01" id="Nitrogen" name="Nitrogen" class="form-control" placeholder="e.g. 80" title="ppm">
           </div>
+          <div class="col-md-4">
+            <label for="Phosphorus" class="form-label">Phosphorus (P)</label>
+            <input type="number" step="0.01" id="Phosphorus" name="Phosphorus" class="form-control" placeholder="e.g. 40" title="ppm">
+          </div>
+          <div class="col-md-4">
+            <label for="Potassium" class="form-label">Potassium (K)</label>
+            <input type="number" step="0.01" id="Potassium" name="Potassium" class="form-control" placeholder="e.g. 40" title="ppm">
+          </div>
+        </div>
 
-          <div class="row mt-4">
-				<div class="col-md-4">
-					<label for="Temperature">Temperature</label>
-					<input type="number" step="0.01" id="Temperature" name="Temperature" placeholder="Enter Temperature in °C" class="form-control" required step="0">
-				</div>
-				<div class="col-md-4">
-					<label for="Humidity">Humidity</label>
-					<input type="number" step="0.01" id="Humidity" name="Humidity" placeholder="Enter Humidity in %" class="form-control" required step="0">
-				</div>
-				<div class="col-md-4">
-					<label for="pH">pH</label>
-					<input type="number" step="0.01" id="pH" name="pH" placeholder="Enter pH value" class="form-control" required step="0">
-				</div>
-			</div>
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <label for="Temperature" class="form-label">Temperature (°C)</label>
+            <input type="number" step="0.01" id="Temperature" name="Temperature" class="form-control" placeholder="e.g. 25">
+          </div>
+          <div class="col-md-6">
+            <label for="pH" class="form-label">pH</label>
+            <input type="number" step="0.01" id="pH" name="pH" class="form-control" placeholder="e.g. 6.8">
+          </div>
+        </div>
 
-          <div class="row mt-4">
-				<div class="col-md-4">
-					<label for="Rainfall">Rainfall</label>
-					<input type="number" step="0.01" id="Rainfall" name="Rainfall" placeholder="Enter Rainfall in mm" class="form-control" required>
-				</div>
-			</div>
-
-
-
-           <div class="row mt-4">
-
-           <div class="col-md-12 text-center">
-				<button type="submit" class="btn btn-primary btn-lg">Crop for optimal yield is </button>
-			</div>
-			</div>
+        <div class="row mt-4">
+          <div class="col d-flex justify-content-center gap-3">
+            <button type="submit" class="btn btn-success btn-lg">Predict Crop</button>
+            <button type="button" id="clearBtn" class="btn btn-outline-secondary btn-lg">Clear</button>
+          </div>
+        </div>
       </form>
 
-       {% if result %}
-		<div class="card bg-dark" style="width: 18rem;">
-		  <img src="{{url_for('static', filename='crop.png')}}" style="width: 70px; height: 70px;" class="card-img-top" alt="...">
-		  <div class="card-body">
-			<h5 class="card-title">Recommend Crop for Optimal Yield is:</h5>
-			<p class="card-text">{{ result }} </p>
-		  </div>
-		</div>
-	   {% endif %}
+      {% if result %}
+      <div class="mt-4">
+        <div class="alert alert-success d-flex align-items-center">
+          <i class="fa-solid fa-check-circle me-2"></i>
+          <div><strong>Result:</strong> {{ result }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not result %}
+      <div class="mt-4 small text-muted">Try typical values: N=60–100, P=20–50, K=30–60, Temp=18–30, pH=5.5–7.5</div>
+      {% endif %}
+    </div>
   </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
-  </body>
-</html>
+  <!-- Right column: text-only quick info -->
+  <div class="col-lg-4">
+    <div class="card project-card p-3 text-center model-card">
+      <div class="mb-2">
+        <i class="fa-solid fa-leaf text-success" style="font-size:28px;"></i>
+      </div>
+
+      <h5 class="mb-1">Model Insights</h5>
+      <p class="small text-muted mb-2">Predictions are based on trained model and current soil readings.</p>
+
+      <div class="list-group text-start">
+        <div class="list-group-item"><strong>Tip:</strong> Use live data for best accuracy.</div>
+        <div class="list-group-item"><strong>Note:</strong> Predictions are advisory; combine with local agronomy.</div>
+      </div>
+
+      <div class="mt-3">
+        <a href="{{ url_for('soil_health') }}" class="btn btn-outline-warning w-100">Open Soil Health</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* guard helpers to avoid errors if element missing */
+const maybeGet = (id) => document.getElementById(id) || null;
+
+/* Fill live data button (uses /soil-health-live) */
+const fillBtn = maybeGet('fillBtn');
+if (fillBtn) {
+  fillBtn.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/soil-health-live');
+      const json = await res.json();
+      if (json.data) {
+        const d = json.data;
+        if (d.N !== undefined && maybeGet('Nitrogen')) maybeGet('Nitrogen').value = d.N;
+        if (d.P !== undefined && maybeGet('Phosphorus')) maybeGet('Phosphorus').value = d.P;
+        if (d.K !== undefined && maybeGet('Potassium')) maybeGet('Potassium').value = d.K;
+        if (d.temperature !== undefined && maybeGet('Temperature')) maybeGet('Temperature').value = d.temperature;
+        if (d.ph !== undefined && maybeGet('pH')) maybeGet('pH').value = d.ph;
+      } else {
+        alert('Live data unavailable.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Could not fetch live data.');
+    }
+  });
+}
+
+/* Clear button */
+const clearBtn = maybeGet('clearBtn');
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    ['Nitrogen','Phosphorus','Potassium','Temperature','pH'].forEach(id => {
+      const el = maybeGet(id);
+      if (el) el.value = '';
+    });
+  });
+}
+</script>
+{% endblock %}
