@@ -1,80 +1,184 @@
+/* static/css/styles.css
+   Light-green presentation theme for PrecisionGrow
+*/
+
+/* ==== COLOR & THEME VARS ==== */
+:root{
+  --deep-green: #1b5e20;
+  --mid-green: #2e7d32;
+  --accent-green: #43a047;
+  --soft-bg-1: #D4ECDD;
+  --soft-bg-2: #EAF6F6;
+  --card-bg: rgba(255,255,255,0.88);
+  --muted: #6c757d;
+}
+
+/* ==== PAGE LAYOUT ==== */
+html, body {
+  height: 100%;
+}
 body {
-    background-color: #e6f5e6;
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, var(--soft-bg-1), var(--soft-bg-2));
+  color: #0b3a23;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main.container { flex: 1; }
+
+/* ==== NAVBAR ==== */
+.navbar {
+  background: var(--deep-green) !important;
+  box-shadow: 0 6px 20px rgba(27,94,32,0.12);
+}
+.navbar-brand { font-weight: 700; color: #fff !important; }
+.navbar .btn { border-radius: 10px; padding: 6px 14px; }
+
+/* ==== HERO / HEADINGS ==== */
+.h1-hero { color: var(--deep-green); font-weight: 700; font-size: 2rem; }
+.lead-muted { color: var(--muted); font-size: 1.05rem; }
+
+/* ==== CARDS ==== */
+.project-card {
+  background: var(--card-bg);
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(18,69,40,0.06);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.project-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(18,69,40,0.09); }
+.card-header.bg-gradient {
+  background: linear-gradient(90deg, var(--mid-green), var(--accent-green));
+  color: #fff;
+  font-weight: 600;
 }
 
-.container {
-    background: white;
-    padding: 2rem 3rem;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 450px;
-    text-align: center;
+/* icon circle */
+.icon-circle {
+  width: 56px; height: 56px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white; background: var(--mid-green);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
-h2 {
-    color: #28a745;
-    margin-bottom: 20px;
+/* ==== FORMS ==== */
+label { display: block; margin-bottom: 6px; color: #0b3a23; font-weight: 600; }
+input, select, textarea {
+  width: 100%; padding: 10px; border: 1px solid #b7e1c7; border-radius: 10px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.95);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--mid-green);
+  box-shadow: 0 0 6px rgba(67,160,71,0.12);
 }
 
-label {
-    display: block;
-    margin: 10px 0 5px;
-    text-align: left;
+/* ==== BUTTONS ==== */
+.btn-primary, .btn-success {
+  background-color: var(--mid-green); border-color: var(--mid-green); color: #fff;
+}
+.btn-primary:hover, .btn-success:hover {
+  background-color: var(--accent-green); border-color: var(--accent-green);
+}
+.btn-outline-success:hover { background-color: var(--mid-green); color: white; }
+
+/* ==== CHATBOT ==== */
+#chatPanel { border-radius: 14px; background-color: var(--card-bg); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+.bot-message, .user-message {
+  padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; word-wrap: break-word;
+}
+.bot-message { background-color: #f1f3f5; color: #1b3a2a; align-self: flex-start; }
+.user-message { background-color: #dff4e0; color: #0b3a23; align-self: flex-end; }
+#chatMessages { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+
+/* quick buttons */
+.quick-q { border-radius: 8px; background: rgba(255,255,255,0.92); }
+
+/* ==== FOOTER ==== */
+footer { background: var(--deep-green); color: white; text-align: center; padding: 12px 0; font-size: 0.9rem; }
+
+/* ==== UTILITIES ==== */
+.text-success { color: var(--mid-green) !important; }
+.text-muted { color: var(--muted) !important; }
+.center-btn { display: inline-flex; align-items: center; gap: 10px; }
+
+/* ==== RESPONSIVE ==== */
+@media (max-width: 768px) {
+  .h1-hero { font-size: 1.5rem; }
+  .project-card { padding: 1rem; }
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-bottom: 15px;
+/* ======= Subtle entrance animations ======= */
+
+/* fade + up animation */
+@keyframes pdg-fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-button, .btn {
-    background-color: #28a745;
-    border: none;
-    padding: 12px 20px;
-    color: white;
-    font-size: 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    margin-top: 10px;
+/* small scale-in for hero */
+@keyframes pdg-scaleIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-button:hover, .btn:hover {
-    background-color: #218838;
+/* utility classes */
+.fade-in {
+  animation-name: pdg-fadeUp;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(.2,.9,.2,1);
+  animation-fill-mode: both;
+  opacity: 0;
+  transform-origin: center;
+}
+.scale-in {
+  animation-name: pdg-scaleIn;
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(.2,.9,.2,1);
+  animation-fill-mode: both;
+  opacity: 0;
 }
 
-.link {
-    margin-top: 15px;
-}
+/* small appearance polish */
+.fade-in:not(:defined), .scale-in:not(:defined) { opacity: 0; }
 
-.error {
-    color: red;
-    font-weight: bold;
+/* responsive tweak */
+@media (max-width: 576px) {
+  .fade-in { animation-duration: 420ms; }
+  .scale-in { animation-duration: 420ms; }
 }
-
-.button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 20px;
+/* ---- Crop prediction accent cards (green/yellow/blue) ---- */
+.accent-card {
+  display:flex;
+  gap:14px;
+  align-items:center;
+  min-width: 240px;
+  padding:12px 16px;
+  border-radius:12px;
+  background:#fff;
+  box-shadow: 0 6px 18px rgba(14,30,37,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
 }
+.accent-icon{
+  width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;
+}
+.accent-body h6{ margin:0; font-weight:700; }
+.accent-body p{ margin:0; }
 
-.logout {
-    display: block;
-    margin-top: 30px;
-    color: #dc3545;
-    font-weight: bold;
-    text-decoration: none;
+/* colors */
+.accent-green .accent-icon{ background: var(--mid-green, #28a745); }
+.accent-yellow .accent-icon{ background: #ffb703; }
+.accent-blue .accent-icon{ background: #0d6efd; }
+
+/* small visual tweaks for cards area */
+.project-card img { border-radius: 10px; background: transparent; }
+.project-card .list-group-item { border: none; padding:8px 0; }
+
+/* responsive: stack accent cards on small screens */
+@media (max-width: 767px) {
+  .accent-card { width: 100%; justify-content:flex-start; }
+  .d-flex.gap-3.justify-content-center.flex-wrap { flex-direction:column; align-items:stretch; gap:10px; }
 }
