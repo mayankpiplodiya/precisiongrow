@@ -1,1 +1,2 @@
 # Crop_Recommendation
+ This project aims to develop a system that uses IoT devices to collect real-time data, such as soil moisture, temperature, and ph. This data is processed through machine learning (ML) models to predict the crop type which will produce the best yield which will promote crop rotation and resource management. The system uses artificial intelligence (AI) for predictive analysis, and the results are displayed on a web interface where Cultivator can plan better, and make informed decisions.
