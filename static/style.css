@@ -1,33 +1,48 @@
-/* static/css/styles.css
-   Light-green presentation theme for PrecisionGrow
-*/
+/* ================================
+   PrecisionGrow Premium Theme
+   + DARK MODE SUPPORT
+================================ */
 
-/* ==== COLOR & THEME VARS ==== */
+/* ==== COLOR VARS ==== */
 :root{
   --deep-green: #1b5e20;
   --mid-green: #2e7d32;
   --accent-green: #43a047;
+
   --soft-bg-1: #D4ECDD;
   --soft-bg-2: #EAF6F6;
-  --card-bg: rgba(255,255,255,0.88);
+
+  --card-bg: rgba(255,255,255,0.9);
   --muted: #6c757d;
 }
 
-/* ==== PAGE LAYOUT ==== */
-html, body {
-  height: 100%;
+/* 🌙 DARK MODE VARIABLES */
+body.dark-mode {
+  --soft-bg-1: #0f172a;
+  --soft-bg-2: #020617;
+  --card-bg: #1e293b;
+  --muted: #9ca3af;
+  color: #e5e7eb;
 }
+
+/* ==== PAGE ==== */
+html, body { height: 100%; }
+
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background: linear-gradient(135deg, var(--soft-bg-1), var(--soft-bg-2));
   color: #0b3a23;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
 }
+
+body.dark-mode {
+  color: #e5e7eb;
+}
+
 main.container { flex: 1; }
 
 /* ==== NAVBAR ==== */
@@ -35,12 +50,38 @@ main.container { flex: 1; }
   background: var(--deep-green) !important;
   box-shadow: 0 6px 20px rgba(27,94,32,0.12);
 }
-.navbar-brand { font-weight: 700; color: #fff !important; }
-.navbar .btn { border-radius: 10px; padding: 6px 14px; }
 
-/* ==== HERO / HEADINGS ==== */
-.h1-hero { color: var(--deep-green); font-weight: 700; font-size: 2rem; }
-.lead-muted { color: var(--muted); font-size: 1.05rem; }
+body.dark-mode .navbar {
+  background: #111827 !important;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: #fff !important;
+}
+
+body.dark-mode .navbar-brand {
+  color: #4ade80 !important;
+}
+
+.navbar .btn {
+  border-radius: 10px;
+  padding: 6px 14px;
+}
+
+/* ==== TEXT ==== */
+.h1-hero {
+  color: var(--deep-green);
+  font-weight: 700;
+}
+
+body.dark-mode .h1-hero {
+  color: #4ade80;
+}
+
+.lead-muted {
+  color: var(--muted);
+}
 
 /* ==== CARDS ==== */
 .project-card {
@@ -48,137 +89,121 @@ main.container { flex: 1; }
   border: none;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(18,69,40,0.06);
-  transition: transform .18s ease, box-shadow .18s ease;
+  transition: 0.3s;
 }
-.project-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(18,69,40,0.09); }
+
+.project-card:hover {
+  transform: translateY(-6px);
+}
+
+body.dark-mode .project-card {
+  background: #1f2937;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* ==== HEADER ==== */
 .card-header.bg-gradient {
   background: linear-gradient(90deg, var(--mid-green), var(--accent-green));
   color: #fff;
-  font-weight: 600;
 }
 
-/* icon circle */
+/* ==== ICON ==== */
 .icon-circle {
-  width: 56px; height: 56px; border-radius: 12px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 20px; color: white; background: var(--mid-green);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mid-green);
+  color: white;
 }
 
 /* ==== FORMS ==== */
-label { display: block; margin-bottom: 6px; color: #0b3a23; font-weight: 600; }
 input, select, textarea {
-  width: 100%; padding: 10px; border: 1px solid #b7e1c7; border-radius: 10px; margin-bottom: 12px;
-  background: rgba(255,255,255,0.95);
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #b7e1c7;
+  background: white;
 }
-input:focus, select:focus, textarea:focus {
-  outline: none; border-color: var(--mid-green);
-  box-shadow: 0 0 6px rgba(67,160,71,0.12);
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #111827;
+  border: 1px solid #374151;
+  color: #e5e7eb;
 }
 
 /* ==== BUTTONS ==== */
-.btn-primary, .btn-success {
-  background-color: var(--mid-green); border-color: var(--mid-green); color: #fff;
+.btn-success {
+  background: var(--mid-green);
+  border: none;
 }
-.btn-primary:hover, .btn-success:hover {
-  background-color: var(--accent-green); border-color: var(--accent-green);
-}
-.btn-outline-success:hover { background-color: var(--mid-green); color: white; }
 
-/* ==== CHATBOT ==== */
-#chatPanel { border-radius: 14px; background-color: var(--card-bg); box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
-.bot-message, .user-message {
-  padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; max-width: 85%; word-wrap: break-word;
+.btn-success:hover {
+  background: var(--accent-green);
 }
-.bot-message { background-color: #f1f3f5; color: #1b3a2a; align-self: flex-start; }
-.user-message { background-color: #dff4e0; color: #0b3a23; align-self: flex-end; }
-#chatMessages { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
 
-/* quick buttons */
-.quick-q { border-radius: 8px; background: rgba(255,255,255,0.92); }
+/* ==== CHAT ==== */
+#chatPanel {
+  background: var(--card-bg);
+}
+
+body.dark-mode #chatPanel {
+  background: #1f2937;
+}
+
+.bot-message {
+  background: #f1f3f5;
+}
+
+.user-message {
+  background: #dff4e0;
+}
+
+body.dark-mode .bot-message {
+  background: #374151;
+  color: white;
+}
+
+body.dark-mode .user-message {
+  background: #065f46;
+  color: white;
+}
 
 /* ==== FOOTER ==== */
-footer { background: var(--deep-green); color: white; text-align: center; padding: 12px 0; font-size: 0.9rem; }
+footer {
+  background: var(--deep-green);
+  color: white;
+}
 
-/* ==== UTILITIES ==== */
-.text-success { color: var(--mid-green) !important; }
-.text-muted { color: var(--muted) !important; }
-.center-btn { display: inline-flex; align-items: center; gap: 10px; }
+body.dark-mode footer {
+  background: #020617;
+}
+
+/* ==== ANIMATION ==== */
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+/* ==== ACCENT CARDS ==== */
+.accent-card {
+  background: var(--card-bg);
+}
+
+body.dark-mode .accent-card {
+  background: #1f2937;
+}
 
 /* ==== RESPONSIVE ==== */
 @media (max-width: 768px) {
   .h1-hero { font-size: 1.5rem; }
-  .project-card { padding: 1rem; }
-}
-
-/* ======= Subtle entrance animations ======= */
-
-/* fade + up animation */
-@keyframes pdg-fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* small scale-in for hero */
-@keyframes pdg-scaleIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* utility classes */
-.fade-in {
-  animation-name: pdg-fadeUp;
-  animation-duration: 560ms;
-  animation-timing-function: cubic-bezier(.2,.9,.2,1);
-  animation-fill-mode: both;
-  opacity: 0;
-  transform-origin: center;
-}
-.scale-in {
-  animation-name: pdg-scaleIn;
-  animation-duration: 520ms;
-  animation-timing-function: cubic-bezier(.2,.9,.2,1);
-  animation-fill-mode: both;
-  opacity: 0;
-}
-
-/* small appearance polish */
-.fade-in:not(:defined), .scale-in:not(:defined) { opacity: 0; }
-
-/* responsive tweak */
-@media (max-width: 576px) {
-  .fade-in { animation-duration: 420ms; }
-  .scale-in { animation-duration: 420ms; }
-}
-/* ---- Crop prediction accent cards (green/yellow/blue) ---- */
-.accent-card {
-  display:flex;
-  gap:14px;
-  align-items:center;
-  min-width: 240px;
-  padding:12px 16px;
-  border-radius:12px;
-  background:#fff;
-  box-shadow: 0 6px 18px rgba(14,30,37,0.06);
-  border: 1px solid rgba(0,0,0,0.04);
-}
-.accent-icon{
-  width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;
-}
-.accent-body h6{ margin:0; font-weight:700; }
-.accent-body p{ margin:0; }
-
-/* colors */
-.accent-green .accent-icon{ background: var(--mid-green, #28a745); }
-.accent-yellow .accent-icon{ background: #ffb703; }
-.accent-blue .accent-icon{ background: #0d6efd; }
-
-/* small visual tweaks for cards area */
-.project-card img { border-radius: 10px; background: transparent; }
-.project-card .list-group-item { border: none; padding:8px 0; }
-
-/* responsive: stack accent cards on small screens */
-@media (max-width: 767px) {
-  .accent-card { width: 100%; justify-content:flex-start; }
-  .d-flex.gap-3.justify-content-center.flex-wrap { flex-direction:column; align-items:stretch; gap:10px; }
 }
