@@ -1,116 +1,204 @@
 {% extends "home.html" %}
+
 {% block title %}Soil Health · PrecisionGrow{% endblock %}
 
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% endblock %}
-
 {% block content %}
-<div class="text-center mb-3">
-  <h2 class="text-success fw-bold">Soil Health Analysis 🌱</h2>
-  <p class="lead-muted">Live sensor feed and recommendations</p>
-</div>
+
+<h3 class="mb-4">
+  🌱 Soil Health Monitoring Dashboard
+</h3>
 
 <div class="row g-4">
-  <div class="col-lg-8">
-    <div class="card project-card p-3">
-      <h5>Live Sensor Feed Graphs</h5>
-      <canvas id="liveFeedChart" style="height:360px;"></canvas>
+
+  <!-- LIVE METRICS -->
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5>📊 Live Metrics</h5>
+      <div id="liveMetrics">Loading...</div>
     </div>
   </div>
 
-  <div class="col-lg-4">
-    <div class="card project-card p-3 mb-3">
-      <h6>Current Sensor Data</h6>
-      <div id="liveMetrics" class="list-group list-group-flush small">
-        <div class="list-group-item">Loading sensor data...</div>
-      </div>
+  <!-- RECOMMENDATIONS -->
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h5> Recommendations</h5>
+      <div id="liveRecs"></div> <!--  Removed default "Loading..." -->
     </div>
+  </div>
 
-    <div class="card project-card p-3">
-      <h6>Recommendations</h6>
-      <div id="liveRecs" class="list-group list-group-flush small">
-        <div class="list-group-item">Fetching recommendations...</div>
-      </div>
-      <div class="d-grid mt-3">
-        <a href="{{ url_for('download_soil_report') }}" class="btn btn-success">📄 Download Soil Health Report</a>
-      </div>
-    </div>
+</div>
+
+<!-- CHART -->
+<div class="card p-3 mt-4">
+  <h5>Live Soil Sensor Graph</h5>
+
+  <div style="height: 320px;">
+    <canvas id="liveFeedChart"></canvas>
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-const ctx = document.getElementById('liveFeedChart').getContext('2d');
-let liveChart = new Chart(ctx, {
+
+const canvas = document.getElementById('liveFeedChart');
+const ctx = canvas ? canvas.getContext('2d') : null;
+
+/* DARK MODE */
+function isDarkMode() {
+  return document.body.classList.contains('dark-mode');
+}
+
+/* CHART STYLE */
+function getChartOptions() {
+  const dark = isDarkMode();
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: dark ? "#e5e7eb" : "#333"
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: dark ? "#374151" : "#e5e7eb" },
+        ticks: { color: dark ? "#ccc" : "#333" }
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: dark ? "#374151" : "#e5e7eb" },
+        ticks: { color: dark ? "#ccc" : "#333" }
+      }
+    }
+  };
+}
+
+/* INIT CHART */
+let liveChart = null;
+
+if (ctx && typeof Chart !== "undefined") {
+  liveChart = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: [],
-        datasets: [
-            { label: 'pH', data: [], borderColor: '#2e7d32', fill: false, tension: 0.3 },
-            { label: 'Temperature (°C)', data: [], borderColor: '#f39c12', fill: false, tension: 0.3 },
-            { label: 'Humidity (%)', data: [], borderColor: '#0288d1', fill: false, tension: 0.3 },
-            { label: 'N (ppm)', data: [], borderColor: '#8e44ad', fill: false, tension: 0.3 }
-        ]
+      labels: [],
+      datasets: [
+        {
+          label: 'pH',
+          data: [],
+          borderColor: '#2e7d32',
+          tension: 0.4
+        },
+        {
+          label: 'Temperature',
+          data: [],
+          borderColor: '#f39c12',
+          tension: 0.4
+        },
+        {
+          label: 'Soil Moisture',
+          data: [],
+          borderColor: '#0288d1',
+          tension: 0.4
+        }
+      ]
     },
-    options: {
-        responsive: true,
-        scales: { x: { title: { display: true, text: 'Time' } }, y: { beginAtZero: true } }
-    }
-});
+    options: getChartOptions()
+  });
+}
 
+/* FETCH LIVE DATA */
 async function fetchLive() {
   try {
-    const res = await fetch('/soil-health-live');
-    const json = await res.json();
+
     const metricsEl = document.getElementById('liveMetrics');
     const recsEl = document.getElementById('liveRecs');
-    metricsEl.innerHTML = '';
-    recsEl.innerHTML = '';
 
-    if (json.error) {
-      metricsEl.innerHTML = `<div class="list-group-item text-danger">${json.error}</div>`;
-      recsEl.innerHTML = `<div class="list-group-item">No recommendations available.</div>`;
-      return;
-    }
+    const res = await fetch('/soil-health-live');
+
+    if (!res.ok) throw new Error("API error");
+
+    const json = await res.json();
 
     const data = json.data || {};
     const recs = json.recommendations || {};
 
-    // Metrics
-    for (const [k,v] of Object.entries(data)) {
-      metricsEl.innerHTML += `<div class="list-group-item d-flex justify-content-between"><div><strong>${k}</strong></div><div><span class="badge bg-light text-dark">${v}</span></div></div>`;
+    /* CLEAR UI */
+    if (metricsEl) metricsEl.innerHTML = "";
+    if (recsEl) recsEl.innerHTML = "";
+
+    /* METRICS */
+    for (const [key, value] of Object.entries(data)) {
+      metricsEl.innerHTML += `
+        <div class="d-flex justify-content-between border-bottom py-1">
+          <span>${key.toUpperCase()}</span>
+          <b>${value}</b>
+        </div>
+      `;
     }
 
-    // Recs
-    if (Object.keys(recs).length === 0) {
-      recsEl.innerHTML = `<div class="list-group-item">Soil appears healthy.</div>`;
-    } else {
-      for (const r of Object.values(recs)) recsEl.innerHTML += `<div class="list-group-item">${r}</div>`;
+    /* RECOMMENDATIONS (NO "SOIL IS HEALTHY") */
+    if (Object.keys(recs).length !== 0) {
+      for (const r of Object.values(recs)) {
+        recsEl.innerHTML += `
+          <div class="alert alert-warning py-1 mb-2">
+            ${r}
+          </div>
+        `;
+      }
     }
+    //  else → DO NOTHING (blank)
 
-    // Update Chart
-    const ts = new Date().toLocaleTimeString();
-    liveChart.data.labels.push(ts);
-    liveChart.data.datasets[0].data.push(data.ph ?? 0);
-    liveChart.data.datasets[1].data.push(data.temperature ?? 0);
-    liveChart.data.datasets[2].data.push(data.humidity ?? 0);
-    liveChart.data.datasets[3].data.push(data.N ?? 0);
+    /* CHART UPDATE */
+    if (liveChart) {
 
-    if (liveChart.data.labels.length > 12) {
-      liveChart.data.labels.shift();
-      liveChart.data.datasets.forEach(ds => ds.data.shift());
+      const time = new Date().toLocaleTimeString();
+
+      liveChart.data.labels.push(time);
+      liveChart.data.datasets[0].data.push(data.ph ?? 0);
+      liveChart.data.datasets[1].data.push(data.temperature ?? 0);
+      liveChart.data.datasets[2].data.push(data.soil_moisture ?? 0);
+
+      if (liveChart.data.labels.length > 12) {
+        liveChart.data.labels.shift();
+        liveChart.data.datasets.forEach(d => d.data.shift());
+      }
+
+      liveChart.update();
     }
-    liveChart.update();
 
   } catch (err) {
-    console.error(err);
+    console.error("Live error:", err);
+
+    document.getElementById('liveMetrics').innerHTML =
+      " Error loading sensor data";
+
+    document.getElementById('liveRecs').innerHTML =
+      "Backend / ThingSpeak issue";
   }
 }
 
-// initial + periodic
+/* AUTO REFRESH */
 fetchLive();
-setInterval(fetchLive, 15000);
+setInterval(fetchLive, 10000);
+
+/* DARK MODE SYNC */
+document.getElementById('themeToggle')?.addEventListener('click', () => {
+  setTimeout(() => {
+    if (liveChart) {
+      liveChart.options = getChartOptions();
+      liveChart.update();
+    }
+  }, 200);
+});
+
 </script>
+
 {% endblock %}
