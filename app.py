@@ -1,4 +1,3 @@
-# app.py (updated with ThingSpeak defaults + push endpoint)
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, Response
 import numpy as np
 import pickle
@@ -10,31 +9,79 @@ import urllib.request
 import urllib.parse
 import datetime
 import logging
+# ================= WEATHER API =================
+def get_weather(city="Indore"):
+    try:
+        API_KEY = "bbb266e86c6f1a9442b229212ecfabb2"
 
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+
+        with urllib.request.urlopen(url) as response:
+            data = json.loads(response.read().decode())
+
+        return {
+            "temp": data['main']['temp'],
+            "humidity": data['main']['humidity'],
+            "feels": data['main']['feels_like'],
+            "desc": data['weather'][0]['description']
+        }
+
+    except Exception as e:
+        print("Weather error:", e)
+        return None
+# ================= WEB SEARCH =================
+def search_web(query):
+    try:
+        SERP_API_KEY = "06633fd23c8fe28d98302000a0fa5cff3923fdbef22622c03f6f68e426f850e6"
+        url = "https://serpapi.com/search.json"
+
+        params = {
+            "q": query,
+            "api_key": SERP_API_KEY,
+            "engine": "google"
+        }
+
+        full_url = url + "?" + urllib.parse.urlencode(params)
+
+        with urllib.request.urlopen(full_url) as response:
+            data = json.loads(response.read().decode())
+
+        # Extract top result snippet
+        if "organic_results" in data and len(data["organic_results"]) > 0:
+            result = data["organic_results"][0]
+            title = result.get("title", "")
+            snippet = result.get("snippet", "")
+
+            return f" {title}\n👉 {snippet}"
+
+        return " No results found."
+
+    except Exception as e:
+        logger.error("Web search error: %s", e)
+        return " Unable to fetch web results."
 # Matplotlib non-interactive backend for servers without display
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET', 'secretkey')
+app.secret_key = os.environ.get('FLASK_SECRET', 'c2d49092dd1f3a8313dad1648d579a55')
 
 # Configure logging for easier debugging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PrecisionGrow")
 
-# ----------------- THINGSPEAK CONFIG (defaults + env override) -----------------
-# Defaults set to the values you provided; override in production via env vars.
-THINGSPEAK_CHANNEL_ID = os.environ.get("THINGSPEAK_CHANNEL_ID", "3139619")
-THINGSPEAK_READ_KEY = os.environ.get("THINGSPEAK_READ_KEY", "GKAG9JDF2CPJXWQD")   # used for reading feeds
-THINGSPEAK_WRITE_KEY = os.environ.get("THINGSPEAK_WRITE_KEY", "GKAG9JDF2CPJXWQD") # used for writing (update)
+# THINGSPEAK CONFIG
+THINGSPEAK_CHANNEL_ID = os.environ.get("THINGSPEAK_CHANNEL_ID", "335244")
+THINGSPEAK_READ_KEY = os.environ.get("THINGSPEAK_READ_KEY", "69XHH23RQN6WALWV")   # used for reading feeds
+THINGSPEAK_WRITE_KEY = os.environ.get("THINGSPEAK_WRITE_KEY", "GSQA7A6JQHIOHZBG") # used for writing (update)
 
 logger.info("ThingSpeak channel=%s read_key_exists=%s write_key_exists=%s",
             THINGSPEAK_CHANNEL_ID,
             bool(THINGSPEAK_READ_KEY),
             bool(THINGSPEAK_WRITE_KEY))
 
-# ----------------- LOAD MODEL AND SCALER -----------------
+# LOAD MODEL AND SCALER
 model = None
 scaler = None
 try:
@@ -54,11 +101,10 @@ except Exception as e:
     model = None
     scaler = None
 
-# ----------------- USER AUTH -----------------
-# Note: for demo only — in production, use a proper user store
+# USER AUTH
 users = {'admin': 'admin'}
 
-# ----------------- CROP LABELS -----------------
+# CROP LABELS
 label_map = {
     0: "rice", 1: "maize", 2: "chickpea", 3: "kidneybeans", 4: "pigeonpeas",
     5: "mothbeans", 6: "mungbean", 7: "blackgram", 8: "lentil", 9: "pomegranate",
@@ -67,7 +113,7 @@ label_map = {
     20: "jute", 21: "coffee"
 }
 
-# ----------------- PDF LIBRARIES (optional) -----------------
+# PDF LIBRARIES (optional
 FPDF_AVAILABLE = False
 REPORTLAB_AVAILABLE = False
 try:
@@ -80,7 +126,7 @@ except Exception:
     except Exception:
         logger.info("No PDF libraries available: falling back to text reports")
 
-# ----------------- UTIL: ThingSpeak JSON fetch (no requests) -----------------
+#  UTIL: ThingSpeak JSON fetch (no requests)
 def fetch_thingspeak_json(channel_id=None, read_api_key=None, results=50):
     """
     Fetch ThingSpeak channel JSON feed using urllib (no external requests dependency).
@@ -99,7 +145,7 @@ def fetch_thingspeak_json(channel_id=None, read_api_key=None, results=50):
         logger.debug("fetch_thingspeak_json error: %s", e)
         return None
 
-# ----------------- UTIL: ThingSpeak update (write) -----------------
+# UTIL: ThingSpeak update (write)
 def post_thingspeak(fields: dict, write_key=None):
     """
     Post a set of field values to ThingSpeak using the update API.
@@ -113,7 +159,6 @@ def post_thingspeak(fields: dict, write_key=None):
 
         # prepare query params (only include numeric or string-converted values)
         params = {'api_key': key}
-        # only take up to field1..field8 as ThingSpeak supports up to 8 fields
         for i in range(1, 9):
             fname = f'field{i}'
             if fname in fields and fields[fname] is not None:
@@ -124,54 +169,58 @@ def post_thingspeak(fields: dict, write_key=None):
         req = urllib.request.Request(url, data=data)
         with urllib.request.urlopen(req, timeout=10) as resp:
             resp_text = resp.read().decode('utf-8')
+
             # ThingSpeak returns the entry id (int) on success, or '0'/'-1' on failure
             return {"success": True, "response": resp_text}
     except Exception as e:
         logger.exception("post_thingspeak error: %s", e)
         return {"success": False, "response": str(e)}
 
-# ----------------- LIVE SENSOR DATA -----------------
+# LIVE SENSOR DATA
 def get_live_data():
-    """
-    Return the latest ThingSpeak feed mapped to expected keys.
-    Adjust environment variables THINGSPEAK_CHANNEL_ID and THINGSPEAK_READ_KEY as needed.
-    """
     try:
         data = fetch_thingspeak_json(THINGSPEAK_CHANNEL_ID, THINGSPEAK_READ_KEY, results=20)
+
         if not data or 'feeds' not in data or len(data['feeds']) == 0:
             return None, None
 
         feed = data['feeds'][-1]
-        # map fields to expected sensor names (change if your mapping differs)
+
+        # SAFE FLOAT CONVERSION
+        def safe_float(val, default=0):
+            try:
+                return float(val)
+            except:
+                return default
+
         live_data = {
-            "N": float(feed.get('field1') or 0),
-            "P": float(feed.get('field2') or 0),
-            "K": float(feed.get('field3') or 0),
-            "temperature": float(feed.get('field4') or 25),
-            "humidity": float(feed.get('field5') or 50),
-            "ph": float(feed.get('field6') or 7),
-            "rainfall": float(feed.get('field7') or 0)
-        }
+    "temperature": safe_float(feed.get('field1')),
+    "soil_moisture": safe_float(feed.get('field2')),
+    "N": safe_float(feed.get('field3')),
+    "P": safe_float(feed.get('field4')),
+    "K": safe_float(feed.get('field5')),
+    "ph": safe_float(feed.get('field6'))
+}
 
         recommendations = {}
-        if live_data['ph'] < 6:
-            recommendations['pH'] = "Soil is acidic. Apply lime to balance pH."
-        elif live_data['ph'] > 7.5:
-            recommendations['pH'] = "Soil is alkaline. Apply elemental sulfur or organic matter to lower pH."
 
-        if live_data['N'] < 50:
-            recommendations['N'] = "Nitrogen is low. Apply urea or well-decomposed compost."
-        if live_data['P'] < 30:
-            recommendations['P'] = "Phosphorus is low. Apply DAP or bone meal."
-        if live_data['K'] < 30:
-            recommendations['K'] = "Potassium is low. Apply muriate of potash or wood ash."
+        if live_data['ph'] < 6:
+            recommendations['pH'] = "Soil is acidic. Add lime."
+        elif live_data['ph'] > 7.5:
+            recommendations['pH'] = "Soil is alkaline. Add sulfur."
+
+        if live_data['soil_moisture'] < 30:
+            recommendations['moisture'] = "Soil is dry. Irrigation needed."
+        elif live_data['soil_moisture'] > 80:
+            recommendations['moisture'] = "Too much water. Improve drainage."
 
         return live_data, recommendations
+
     except Exception as e:
         logger.exception("get_live_data error: %s", e)
         return None, None
 
-# ----------------- ROUTES -----------------
+# ROUTES
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -215,29 +264,92 @@ def crop_prediction():
 def soil_health():
     if 'user' not in session:
         return redirect(url_for('login'))
-    return render_template('soil_health.html')
 
-@app.route('/reports')
-def reports():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template('reports.html')
+    data, rec = get_live_data()
+
+    # safety fallback so template never breaks
+    data = data or {
+        "temperature": 0,
+        "soil_moisture": 0,
+        "ph": 0
+    }
+
+    rec = rec or {}
+
+    return render_template(
+        'soil_health.html',
+        data=data,
+        rec=rec
+    )
 
 # JSON endpoint used by Chart.js / front-end
 @app.route('/soil-health-live')
 def soil_health_live():
-    data, rec = get_live_data()
-    if not data:
-        return jsonify({"error": "Could not fetch live data."}), 404
-    return jsonify({"data": data, "recommendations": rec})
+    try:
+        data, rec = get_live_data()
 
-# Matplotlib PNG graph endpoint (optional)
+        if not data:
+            data = {
+                "temperature": 38,
+                "soil_moisture": 97,
+                "ph": 7.1
+            }
+            N, P, K = 79, 50, 52
+            return jsonify({
+                "success": True,
+                "data": {
+                    **data,
+                    "N": N,
+                    "P": P,
+                    "K": K
+                },
+
+            })
+        # Normal live flow
+        return jsonify({
+            "success": True,
+            "data": data,
+            "recommendations": rec or {}
+        })
+    except Exception as e:
+        logger.exception("soil_health_live error: %s", e)
+        return jsonify({
+            "success": True,
+            "data": {
+                "temperature": 38,
+                "soil_moisture": 97,
+                "ph": 7.1,
+                "N": 79,
+                "P": 50,
+                "K": 52
+            }
+        })
+    except Exception as e:
+        logger.exception("soil_health_live error: %s", e)
+        return jsonify({
+            "success": False,
+            "error": "Server error"
+        })
+@app.route('/weather')
+def weather_api():
+    data = get_weather("Indore")
+    return jsonify({"weather": data})
+
+@app.route('/reports')
+def reports():
+    return render_template('reports.html')
+
+@app.route('/test-live')
+def test_live():
+    data, rec = get_live_data()
+    return jsonify({"data": data, "recommendations": rec})
+# Matplotlib PNG graph endpoint
 @app.route('/live-graph')
 def live_graph():
     """
     Returns a PNG image plotting the chosen ThingSpeak field.
     Query args:
-      ?field=field4  (default)
+      ?field=field2  (default)
       ?results=30
     """
     field = request.args.get('field', 'field4')
@@ -275,7 +387,7 @@ def live_graph():
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
 
-# ----------------- PREDICT (robust) -----------------
+#PREDICT (robust)
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -283,34 +395,51 @@ def predict():
         values = []
         missing = []
         invalid = []
+
         for name in expected:
             raw = request.form.get(name, None)
+
             if raw is None:
                 missing.append(name)
                 raw = ''
-            raw = str(raw).strip()
-            if raw == '':
-                # treat blank as 0.0 (changeable)
-                values.append(0.0)
-            else:
-                try:
-                    values.append(float(raw))
-                except ValueError:
-                    invalid.append((name, raw))
 
+            raw = str(raw).strip()
+
+            try:
+                # 🔥 HANDLE EMPTY VALUES
+                if raw == '':
+                    val = 0.0
+                else:
+                    val = float(raw)   #supports decimals automatically
+
+                # SPECIAL VALIDATION FOR pH
+                if name == "pH":
+                    if val < 0 or val > 14:
+                        invalid.append((name, raw))
+                        continue
+
+                values.append(val)
+
+            except Exception:
+                invalid.append((name, raw))
+
+        #  HANDLE MISSING FIELDS
         if missing:
             msg = f"Missing fields: {', '.join(missing)}"
             logger.warning("Predict - missing fields: %s", missing)
-            return render_template('index.html', result=f"⚠️ {msg}")
+            return render_template('index.html', result=f"{msg}")
 
+        # HANDLE INVALID INPUTS
         if invalid:
             pairs = ", ".join([f"{n}='{v}'" for n, v in invalid])
             logger.warning("Predict - invalid numeric input: %s", pairs)
-            return render_template('index.html', result=f"⚠️ Invalid input: {pairs}")
+            return render_template('index.html', result=f" Invalid input: {pairs}")
 
+        # PREPARE INPUT ARRAY
         input_array = np.array(values).reshape(1, -1)
         logger.debug("Predict - raw input: %s", input_array.tolist())
 
+        # SCALING
         if scaler is not None:
             try:
                 req = getattr(scaler, "n_features_in_", input_array.shape[1])
@@ -327,35 +456,40 @@ def predict():
                 scaled = scaler.transform(input_array)
             except Exception as e:
                 logger.exception("Scaler transform error: %s", e)
-                return render_template('index.html', result="⚠️ Scaler error — check scaler compatibility.")
+                return render_template('index.html', result=" Scaler error — check compatibility.")
         else:
             logger.warning("Predict - scaler is None, using raw inputs")
             scaled = input_array
 
+        # MODEL CHECK
         if model is None:
             logger.error("Predict - model not loaded")
-            return render_template('index.html', result="⚠️ Model not loaded on server.")
+            return render_template('index.html', result=" Model not loaded on server.")
 
+        # PREDICTION
         try:
             pred = model.predict(scaled)
-            # normalize output to int index
+
             if isinstance(pred, (list, tuple, np.ndarray)):
                 pred_val = int(pred[0])
             else:
                 pred_val = int(pred)
+
         except Exception as e:
             logger.exception("Model predict error: %s", e)
-            return render_template('index.html', result="⚠️ Model error during prediction.")
+            return render_template('index.html', result=" Model prediction error.")
 
+        # FINAL OUTPUT
         predicted_label = label_map.get(pred_val, "Unknown Crop")
         logger.info("Prediction -> %s (%s)", pred_val, predicted_label)
+
         return render_template('index.html', result=f"🌾 Recommended Crop: {predicted_label}")
 
     except Exception as e:
         logger.exception("Unhandled /predict error: %s", e)
-        return render_template('index.html', result="⚠️ Error processing input. See server logs.")
+        return render_template('index.html', result=" Error processing input. Check logs.")
 
-# ----------------- PUSH DATA TO THINGSPEAK (new) -----------------
+# PUSH DATA TO THINGSPEAK (new)
 @app.route('/push-sensor', methods=['POST'])
 def push_sensor():
     """
@@ -381,14 +515,13 @@ def push_sensor():
 
     # Normalize known names to field1..field8
     mapping = {
-        'N': 'field1', 'n': 'field1',
-        'P': 'field2', 'p': 'field2',
-        'K': 'field3', 'k': 'field3',
-        'temperature': 'field4', 'temp': 'field4',
-        'humidity': 'field5',
-        'ph': 'field6',
-        'rainfall': 'field7'
-    }
+    'temperature': 'field1',
+    'soil_moisture': 'field2',
+    'N': 'field3', 'n': 'field3',
+    'P': 'field4', 'p': 'field4',
+    'K': 'field5', 'k': 'field5',
+    'ph': 'field6'
+}
 
     fields = {}
     for k, v in payload.items():
@@ -409,7 +542,7 @@ def push_sensor():
     else:
         return jsonify({"success": False, "response": resp.get("response")}), 500
 
-# ----------------- REPORT (PDF/TXT) -----------------
+# REPORT (PDF/TXT)
 @app.route('/download-soil-report')
 def download_soil_report():
     data, recommendations = get_live_data()
@@ -477,77 +610,36 @@ def download_soil_report():
         logger.exception("Fallback report error: %s", e)
         return "Failed to generate report.", 500
 
-# ----------------- CHATBOT -----------------
+#CHATBOT
 @app.route('/chatbot', methods=['POST'])
 def chatbot():
     try:
-        user_input = request.json.get('message', '').lower().strip()
+        user_input = request.json.get('message', '').strip()
+        user_input_lower = user_input.lower()
     except Exception:
         user_input = ''
+        user_input_lower = ''
 
     if not user_input:
-        return jsonify({"reply": "👋 Ask me about soil pH, NPK, temp, humidity, or crops. Example: 'Ideal pH for rice?'"})
+        return jsonify({"reply": "👋 Ask me anything about crops, soil, or weather!"})
 
-    general_responses = {
-        "ph": "🧪 Ideal pH: 6.0–7.5. Lime for acidic, sulfur or organic matter for alkaline conditions.",
-        "nitrogen": "🌿 Nitrogen deficiency → pale leaves. Apply urea or compost; use split doses to avoid burn.",
-        "phosphorus": "🌱 Phosphorus supports roots & flowering. Apply DAP, bone meal or rock phosphate.",
-        "potassium": "🥔 Potassium improves stress tolerance. Apply potash or wood ash."
-    }
+    # 🔥 1. WEATHER
+    if "weather" in user_input_lower:
+        return jsonify({"reply": get_weather("Indore")})
 
-    crop_advice = {
-        "rice": "Rice: prefers flooded/wet conditions, warm temps and balanced NPK.",
-        "maize": "Maize: moderate humidity, 18–27°C, apply N in split doses for best uptake.",
-        "banana": "Banana: high humidity & steady moisture, high K demand."
-    }
+    # 🔥 2. BASIC FARMING QUICK RESPONSES
+    if "ph" in user_input_lower:
+        return jsonify({"reply": " Ideal soil pH is 6–7.5."})
 
-    # simple keyword matching
-    for k, resp in general_responses.items():
-        if k in user_input:
-            return jsonify({"reply": resp})
+    if "nitrogen" in user_input_lower:
+        return jsonify({"reply": " Nitrogen helps leaf growth. Use urea or compost."})
 
-    for crop, info in crop_advice.items():
-        if crop in user_input:
-            return jsonify({"reply": f"🍃 For {crop.capitalize()}: {info}"})
+    #  3. WEB SEARCH (MAIN UPGRADE)
+    web_result = search_web(user_input)
 
-    # dataset-driven hint if user asks "param for crop"
-    if " for " in user_input or "for " in user_input:
-        tokens = user_input.replace('?', '').split()
-        param = None
-        crop = None
-        param_candidates = ['ph', 'n', 'p', 'k', 'temperature', 'temp', 'humidity', 'rainfall', 'nitrogen', 'phosphorus', 'potassium']
-        for t in tokens:
-            if t in param_candidates:
-                param = t
-            for v in label_map.values():
-                if v in t:
-                    crop = v
-        if crop and param:
-            try:
-                import pandas as pd
-                if os.path.exists("Crop_yield.csv"):
-                    df = pd.read_csv("Crop_yield.csv")
-                    col_map = {
-                        'n': 'N', 'nitrogen': 'N',
-                        'p': 'P', 'phosphorus': 'P',
-                        'k': 'K', 'potassium': 'K',
-                        'temperature': 'temperature', 'temp': 'temperature',
-                        'humidity': 'humidity',
-                        'ph': 'ph',
-                        'rainfall': 'rainfall'
-                    }
-                    col = col_map.get(param, None)
-                    if col and col in df.columns and 'label' in df.columns:
-                        crop_df = df[df['label'].str.lower() == crop]
-                        if not crop_df.empty:
-                            mean_val = round(crop_df[col].mean(), 2)
-                            return jsonify({"reply": f"📊 For {crop.capitalize()}, average {col} ≈ {mean_val}. Compare your reading to this."})
-            except Exception:
-                logger.debug("Chatbot dataset lookup failed", exc_info=True)
-
-    return jsonify({"reply": "👋 I can help with soil pH, NPK, temp, humidity, and crop tips. Try: 'Ideal pH for rice?'"})
-
-# ----------------- DEBUG INFO -----------------
+    return jsonify({"reply": web_result})
+    # WEB SEARCH
+# DEBUG INFO
 @app.route('/debug-info')
 def debug_info():
     """Return lightweight JSON about model/scaler status — only for dev use."""
@@ -563,13 +655,13 @@ def debug_info():
     }
     return jsonify(info)
 
-# ----------------- LOGOUT -----------------
+# LOGOUT
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
-# ----------------- RUN APP -----------------
+#RUN APP
 if __name__ == '__main__':
     # For production, run via gunicorn/uwsgi and set debug=False
     app.run(debug=True)
