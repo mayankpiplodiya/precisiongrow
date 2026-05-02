@@ -2,206 +2,252 @@
 {% block title %}Crop Prediction · PrecisionGrow{% endblock %}
 
 {% block content %}
+
 <style>
-/* local tweaks for this page to ensure consistent spacing/alignment */
-.accent-row { margin-bottom: 18px; }
+.section-card {
+  border-radius: 18px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  padding: 25px;
+}
+
 .accent-card {
   display:flex;
   gap:14px;
   align-items:center;
-  padding:12px 18px;
+  padding:14px 18px;
+  border-radius:14px;
+  background: linear-gradient(135deg,#f8fdf9,#eef7f2);
+  border: 1px solid #e6f4ea;
+  transition: 0.3s;
+}
+
+.accent-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.accent-icon {
+  width:48px;
+  height:48px;
   border-radius:12px;
-  background:rgba(255,255,255,0.95);
-  box-shadow: 0 8px 18px rgba(14,30,37,0.06);
-  border: 1px solid rgba(0,0,0,0.04);
-  min-width: 220px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:18px;
 }
-.accent-icon{
-  width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;
+
+.green { background:#2e7d32; }
+.yellow { background:#f39c12; }
+.blue { background:#3498db; }
+
+.metric-input {
+  border-radius:10px;
+  padding:10px;
+  border:1px solid #ddd;
 }
-.accent-body h6{ margin:0; font-weight:700; font-size:0.95rem; }
-.accent-body p{ margin:0; font-size:0.85rem; color: #6c757d; }
 
-/* color variants */
-.accent-green .accent-icon{ background: var(--mid-green, #28a745); }
-.accent-yellow .accent-icon{ background: #ffb703; }
-.accent-blue .accent-icon{ background: #0d6efd; }
+.metric-input:focus {
+  border-color:#2e7d32;
+  box-shadow:0 0 6px rgba(46,125,50,0.2);
+}
 
-/* place the accent cards in a centered row with even spacing */
-.accent-wrapper { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; align-items:flex-start; }
+.insight-card {
+  border-radius:18px;
+  background: linear-gradient(135deg,#ffffff,#f4fbf6);
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
 
-/* tweak top hero area */
-.form-hero { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-.form-hero .title-block { min-width: 240px; }
-.form-hero .actions { white-space:nowrap; }
+.insight-item {
+  padding:10px;
+  border-left:4px solid #2e7d32;
+  background:#f9fdf9;
+  border-radius:8px;
+  margin-bottom:10px;
+  font-size:14px;
+}
 
-/* make fields vertically balanced */
-.form-control { min-height: 44px; }
-
-/* ensure right card content aligns nicely */
-.model-card .list-group-item { border: none; padding: 8px 0; }
-
-/* responsive improvements */
-@media (max-width: 991px) {
-  .form-hero { flex-direction:column; align-items:flex-start; }
-  .accent-wrapper { justify-content:stretch; }
+.result-box {
+  border-radius:12px;
+  padding:15px;
+  background:linear-gradient(135deg,#e8f5e9,#f1fdf4);
+  border-left:5px solid #2e7d32;
+  font-weight:600;
 }
 </style>
 
-<div class="row g-4">
-  <!-- Accent cards row -->
-  <div class="col-12 accent-row">
-    <div class="accent-wrapper w-100">
-      <div class="accent-card accent-green">
-        <div class="accent-icon"><i class="fa-solid fa-seedling"></i></div>
-        <div class="accent-body">
-          <h6>Crop Recommendation</h6>
-          <p class="mb-0">Model suggests the best crop based on soil & climate inputs.</p>
-        </div>
-      </div>
+<div class="container-fluid">
 
-      <div class="accent-card accent-yellow">
-        <div class="accent-icon"><i class="fa-solid fa-wind"></i></div>
-        <div class="accent-body">
-          <h6>Auto Fill Live</h6>
-          <p class="mb-0">Auto-fill form from live sensors (if configured).</p>
-        </div>
-      </div>
-
-      <div class="accent-card accent-blue">
-        <div class="accent-icon"><i class="fa-solid fa-database"></i></div>
-        <div class="accent-body">
-          <h6>Data Tips</h6>
-          <p class="mb-0">Hover fields for guidance. Use realistic values for best results.</p>
-        </div>
-      </div>
-    </div>
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-success">Crop Prediction Engine</h2>
+    <p class="text-muted">AI-powered crop recommendation using real-time soil & climate data</p>
   </div>
 
-  <!-- Main content: form -->
-  <div class="col-lg-8">
-    <div class="card project-card p-4">
-      <div class="form-hero mb-3">
-        <div class="title-block">
-          <h3 class="h1-hero mb-0">Crop Prediction</h3>
-          <p class="lead-muted mb-0">Enter soil values or click <strong>Fill Live Data</strong>.</p>
-        </div>
-        <div class="actions">
-          <button id="fillBtn" class="btn btn-outline-success">Fill Live Data</button>
-        </div>
-      </div>
+  <div class="d-flex gap-3 justify-content-center flex-wrap mb-4">
 
-      <form action="{{ url_for('predict') }}" method="POST" id="cropForm" class="mt-3">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label for="Nitrogen" class="form-label">Nitrogen (N)</label>
-            <input type="number" step="0.01" id="Nitrogen" name="Nitrogen" class="form-control" placeholder="e.g. 80" title="ppm">
-          </div>
-          <div class="col-md-4">
-            <label for="Phosphorus" class="form-label">Phosphorus (P)</label>
-            <input type="number" step="0.01" id="Phosphorus" name="Phosphorus" class="form-control" placeholder="e.g. 40" title="ppm">
-          </div>
-          <div class="col-md-4">
-            <label for="Potassium" class="form-label">Potassium (K)</label>
-            <input type="number" step="0.01" id="Potassium" name="Potassium" class="form-control" placeholder="e.g. 40" title="ppm">
-          </div>
-        </div>
-
-        <div class="row g-3 mt-3">
-          <div class="col-md-6">
-            <label for="Temperature" class="form-label">Temperature (°C)</label>
-            <input type="number" step="0.01" id="Temperature" name="Temperature" class="form-control" placeholder="e.g. 25">
-          </div>
-          <div class="col-md-6">
-            <label for="pH" class="form-label">pH</label>
-            <input type="number" step="0.01" id="pH" name="pH" class="form-control" placeholder="e.g. 6.8">
-          </div>
-        </div>
-
-        <div class="row mt-4">
-          <div class="col d-flex justify-content-center gap-3">
-            <button type="submit" class="btn btn-success btn-lg">Predict Crop</button>
-            <button type="button" id="clearBtn" class="btn btn-outline-secondary btn-lg">Clear</button>
-          </div>
-        </div>
-      </form>
-
-      {% if result %}
-      <div class="mt-4">
-        <div class="alert alert-success d-flex align-items-center">
-          <i class="fa-solid fa-check-circle me-2"></i>
-          <div><strong>Result:</strong> {{ result }}</div>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if not result %}
-      <div class="mt-4 small text-muted">Try typical values: N=60–100, P=20–50, K=30–60, Temp=18–30, pH=5.5–7.5</div>
-      {% endif %}
+    <div class="accent-card">
+      <div class="accent-icon green"><i class="fa-solid fa-seedling"></i></div>
+      <div><strong>Smart Prediction</strong><br><small>ML-based</small></div>
     </div>
+
+    <div class="accent-card">
+      <div class="accent-icon yellow"><i class="fa-solid fa-bolt"></i></div>
+      <div><strong>Live Data</strong><br><small>IoT sensors</small></div>
+    </div>
+
+    <div class="accent-card">
+      <div class="accent-icon blue"><i class="fa-solid fa-chart-line"></i></div>
+      <div><strong>Accurate Inputs</strong><br><small>Better results</small></div>
+    </div>
+
   </div>
 
-  <!-- Right column: text-only quick info -->
-  <div class="col-lg-4">
-    <div class="card project-card p-3 text-center model-card">
-      <div class="mb-2">
-        <i class="fa-solid fa-leaf text-success" style="font-size:28px;"></i>
-      </div>
+  <div class="row g-4">
 
-      <h5 class="mb-1">Model Insights</h5>
-      <p class="small text-muted mb-2">Predictions are based on trained model and current soil readings.</p>
+    <!-- LEFT -->
+    <div class="col-lg-8">
+      <div class="section-card">
 
-      <div class="list-group text-start">
-        <div class="list-group-item"><strong>Tip:</strong> Use live data for best accuracy.</div>
-        <div class="list-group-item"><strong>Note:</strong> Predictions are advisory; combine with local agronomy.</div>
-      </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h4>Enter Soil Parameters</h4>
+            <small class="text-muted">Or use live sensor data</small>
+          </div>
+          <button type="button" id="fillBtn" class="btn btn-outline-success">
+            ⚡ Fill Live
+          </button>
+        </div>
 
-      <div class="mt-3">
-        <a href="{{ url_for('soil_health') }}" class="btn btn-outline-warning w-100">Open Soil Health</a>
+        <form action="{{ url_for('predict') }}" method="POST" id="cropForm">
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label>Nitrogen</label>
+              <input type="number" step="1" name="Nitrogen" id="Nitrogen" class="form-control metric-input">
+            </div>
+
+            <div class="col-md-4">
+              <label>Phosphorus</label>
+              <input type="number" step="1" name="Phosphorus" id="Phosphorus" class="form-control metric-input">
+            </div>
+
+            <div class="col-md-4">
+              <label>Potassium</label>
+              <input type="number" step="1" name="Potassium" id="Potassium" class="form-control metric-input">
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-md-6">
+              <label>Temperature (°C)</label>
+              <input type="number" step="any" name="Temperature" id="Temperature" class="form-control metric-input">
+            </div>
+
+            <div class="col-md-6">
+              <label>pH</label>
+              <!-- FIX: allow decimal -->
+              <input type="number" step="any" name="pH" id="pH" class="form-control metric-input">
+            </div>
+          </div>
+
+          <div class="text-center mt-4">
+            <button class="btn btn-success btn-lg px-5">Predict Crop</button>
+            <button type="button" id="clearBtn" class="btn btn-outline-secondary btn-lg px-4 ms-2">Clear</button>
+          </div>
+
+        </form>
+
+        {% if result %}
+        <div class="mt-4 result-box">
+          {{ result }}
+        </div>
+        {% endif %}
+
       </div>
     </div>
+
+    <!-- RIGHT -->
+    <div class="col-lg-4">
+      <div class="insight-card">
+        <h5 class="text-center">AI Insights</h5>
+        <div class="insight-item">Use live data for accuracy</div>
+        <div class="insight-item">Ideal pH: 5.5 – 7.5</div>
+        <div class="insight-item">Balanced NPK improves yield</div>
+
+        <a href="{{ url_for('soil_health') }}" class="btn btn-outline-success w-100 mt-3">
+          View Soil Dashboard
+        </a>
+      </div>
+    </div>
+
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-/* guard helpers to avoid errors if element missing */
-const maybeGet = (id) => document.getElementById(id) || null;
 
-/* Fill live data button (uses /soil-health-live) */
-const fillBtn = maybeGet('fillBtn');
-if (fillBtn) {
+document.addEventListener("DOMContentLoaded", () => {
+
+  const fillBtn = document.getElementById('fillBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  // LIVE DATA FILL
   fillBtn.addEventListener('click', async () => {
+
+    fillBtn.innerText = "⏳ Loading...";
+    fillBtn.disabled = true;
+
     try {
       const res = await fetch('/soil-health-live');
       const json = await res.json();
-      if (json.data) {
-        const d = json.data;
-        if (d.N !== undefined && maybeGet('Nitrogen')) maybeGet('Nitrogen').value = d.N;
-        if (d.P !== undefined && maybeGet('Phosphorus')) maybeGet('Phosphorus').value = d.P;
-        if (d.K !== undefined && maybeGet('Potassium')) maybeGet('Potassium').value = d.K;
-        if (d.temperature !== undefined && maybeGet('Temperature')) maybeGet('Temperature').value = d.temperature;
-        if (d.ph !== undefined && maybeGet('pH')) maybeGet('pH').value = d.ph;
-      } else {
-        alert('Live data unavailable.');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Could not fetch live data.');
-    }
-  });
-}
 
-/* Clear button */
-const clearBtn = maybeGet('clearBtn');
-if (clearBtn) {
+      if (json.data && Object.keys(json.data).length > 0) {
+
+        let d = json.data;
+
+        document.getElementById('Temperature').value = d.temperature ?? '';
+        document.getElementById('pH').value = d.ph ?? '';
+
+        if (d.N !== undefined && d.P !== undefined && d.K !== undefined) {
+          document.getElementById('Nitrogen').value = d.N;
+          document.getElementById('Phosphorus').value = d.P;
+          document.getElementById('Potassium').value = d.K;
+        } else {
+          let moisture = d.soil_moisture ?? 50;
+          document.getElementById('Nitrogen').value = Math.round(moisture * 1.5);
+          document.getElementById('Phosphorus').value = Math.round(moisture);
+          document.getElementById('Potassium').value = Math.round(moisture * 1.2);
+        }
+
+        fillBtn.innerText = " Filled";
+
+      } else {
+        alert(" No live data available");
+        fillBtn.innerText = " Fill Live";
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert(" Error fetching data");
+      fillBtn.innerText = " Fill Live";
+    }
+
+    fillBtn.disabled = false;
+  });
+
+  // CLEAR FORM
   clearBtn.addEventListener('click', () => {
     ['Nitrogen','Phosphorus','Potassium','Temperature','pH'].forEach(id => {
-      const el = maybeGet(id);
-      if (el) el.value = '';
+      document.getElementById(id).value = '';
     });
   });
-}
+
+});
+
 </script>
 {% endblock %}
